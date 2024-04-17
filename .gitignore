@@ -158,3 +158,25 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# nextflow stuff
+.nextflow/
+work/
+results/
+
+.nextflow.log*\
+trace.txt*
+report.html.*
+timeline.html*
+report.html*
+*.dot
+*.png.*
+
+# macos stuff
+._*
+.DS_Store
+
+# bioinformatics files
+*.fa*
+*.gtf
+*.bam*
