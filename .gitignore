@@ -180,3 +180,14 @@ report.html*
 *.fa*
 *.gtf
 *.bam*
+input/
+inputs/
+data/
+fastq/
+fastqs/
+reads/
+ref/
+samples/
+sandbox/
+scratch/
+scratch*
