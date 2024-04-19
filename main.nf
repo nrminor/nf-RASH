@@ -216,7 +216,7 @@ process RUN_HIFIASM {
 
 	script:
 	"""
-    hifiasm -o ${basename}_${file_label} -t6 --ul ${ont_fastq} $${pb_fastq}
+    hifiasm -o ${basename}_${file_label} -t6 --ul ${ont_fastq} ${pb_fastq}
 	"""
 
 }
@@ -239,7 +239,7 @@ process CONVERT_CONFIGS_TO_FASTA {
 
 	shell:
 	'''
-    awk '/^S/{print ">"\$2"\n"\$3}' hifiasm_files/!{basename}_!{file_label}.bp.p_ctg.gfa \
+    awk '/^S/{print ">"$2"n"$3}' hifiasm_files/!{basename}_!{file_label}.bp.p_ctg.gfa \
     | fold > ${basename}_${file_label}.p_contigs.fasta
 	'''
 
