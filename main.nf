@@ -81,7 +81,7 @@ workflow {
 // Additional parameters that are derived from parameters set in nextflow.config
 
 params.extracted = params.results + "/01_extracted_regions"
-params.assembly = params.results "/02_hifiasm_assembly"
+params.assembly = params.results + "/02_hifiasm_assembly"
 
 // --------------------------------------------------------------- //
 
