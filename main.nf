@@ -34,7 +34,7 @@ workflow {
     
     ch_desired_regions = Channel
         .fromPath ( params.desired_regions )
-        .splitCsv( header: true, sep = "\t" )
+        .splitCsv( header: true, sep: "\t", strip: true )
         .map { row -> tuple( row.samtools_expression, row.file_label, row.description ) }
 	
 	
