@@ -51,13 +51,13 @@ workflow {
     )
 
     MERGE_PACBIO_FASTQS (
-        MAP_AND_EXTRACT.out
+        EXTRACT_DESIRED_REGIONS.out
             .filter { x[2] == "pacbio" }
             .groupTuple( by: [ 1, 2, 3] )
     )
 
     MERGE_ONT_FASTQS (
-        MAP_AND_EXTRACT.out
+        EXTRACT_DESIRED_REGIONS.out
             .filter { x[2] == "ont" }
             .groupTuple( by: [ 1, 2, 3] )
     )
