@@ -39,35 +39,35 @@ workflow {
 	
 	
 	// Workflow steps
-    process MAP_TO_REF (
+    MAP_TO_REF (
         ch_pb_reads
             .mix ( ch_ont_reads ),
         ch_ref
     )
 
-    process EXTRACT_DESIRED_REGIONS (
+    EXTRACT_DESIRED_REGIONS (
         MAP_TO_REF.out,
         ch_desired_regions
     )
 
-    process MERGE_PACBIO_FASTQS (
+    MERGE_PACBIO_FASTQS (
         MAP_AND_EXTRACT.out
             .filter { x[2] == "pacbio" }
             .groupTuple( by: [ 1, 2, 3] )
     )
 
-    process MERGE_ONT_FASTQS (
+    MERGE_ONT_FASTQS (
         MAP_AND_EXTRACT.out
             .filter { x[2] == "ont" }
             .groupTuple( by: [ 1, 2, 3] )
     )
 
-    process RUN_HIFIASM (
+    RUN_HIFIASM (
         MERGE_PACBIO_FASTQS.out,
         MERGE_ONT_FASTQS.out
     )
 
-    process CONVERT_CONFIGS_TO_FASTA (
+    CONVERT_CONTIGS_TO_FASTA (
         RUN_HIFIASM.out
     )
 
@@ -221,7 +221,7 @@ process RUN_HIFIASM {
 
 }
 
-process CONVERT_CONFIGS_TO_FASTA {
+process CONVERT_CONTIGS_TO_FASTA {
 
 	/* */
 
