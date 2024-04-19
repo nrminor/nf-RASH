@@ -22,12 +22,12 @@ workflow {
     ch_pb_reads = Channel
         .fromPath ( params.pb_fastq )
         .splitFastq ( by: params.split_max, file: true, compress: true )
-        .map { fastq -> tuple( file(fastq), file(fastq).getBaseName(), "pacbio" ) }
+        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" ) }
 
     ch_ont_reads = Channel
         .fromPath ( params.ont_fastq )
         .splitFastq ( by: params.split_max, file: true, compress: true )
-        .map { fastq -> tuple( file(fastq), file(fastq).getBaseName(), "ont" ) }
+        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
     
     ch_ref = Channel
         .fromPath ( params.ref_fasta )
