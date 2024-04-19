@@ -11,11 +11,11 @@ workflow {
 
     // make sure the user provided inputs that exist
     assert params.pb_fastq : "Please provide a PacBio HiFi CCS FASTQ.gz file with the --pb_fastq argument."
-    assert file(params.pb_fastq).exists : "Provided path to PacBio FASTQ does not exist."
+    assert file(params.pb_fastq).exists() : "Provided path to PacBio FASTQ does not exist."
 	assert params.ont_fastq : "Please provide a Oxford Nanopore FASTQ.gz file file with the --ont_fastq argument."
-    assert file(params.ont_fastq).exists : "Provided path to Nanopore FASTQ does not exist."
+    assert file(params.ont_fastq).exists() : "Provided path to Nanopore FASTQ does not exist."
 	assert params.ref_fasta : "Please provide a reference FASTA with the --ref_fasta argument."
-    assert file(params.ref_fasta).exists : "Provided path to reference FASTA does not exist."
+    assert file(params.ref_fasta).exists() : "Provided path to reference FASTA does not exist."
 
 
 	// input channels
