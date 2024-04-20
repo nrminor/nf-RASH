@@ -46,7 +46,7 @@ workflow {
     MAP_TO_REF (
         QUICK_SPLIT_PACBIO_FASTQ.out
             .flatten( )
-            .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
+            .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" ) }
             .mix (
                 QUICK_SPLIT_ONT_FASTQ.out
                     .flatten( )
