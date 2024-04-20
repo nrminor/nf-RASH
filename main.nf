@@ -259,15 +259,18 @@ process RUN_HIFIASM {
     cpus params.cpus
 
 	input:
-    tuple path(pb_fastq), val(basename), val(platform), val(file_label)
-    tuple path(ont_fastq), val(basename), val(platform), val(file_label)
+    tuple path(pb_fastq), val(pb_basename), val(pb_platform), val(file_label1)
+    tuple path(ont_fastq), val(ont_basename), val(ont_platform), val(file_label2)
 
 	output:
-    tuple path("*"), val(basename), val(platform), val(file_label)
+    tuple path("*"), val(pb_basename), val(platform), val(file_label1)
+
+    when:
+    file_label1 == file_label2
 
 	script:
 	"""
-    hifiasm -o ${basename}_${file_label} -t ${task.cpus} --ul ${ont_fastq} ${pb_fastq}
+    hifiasm -o ${pb_basename}_${file_label1} -t ${task.cpus} --ul ${ont_fastq} ${pb_fastq}
 	"""
 
 }
