@@ -114,7 +114,7 @@ process MAP_TO_REF {
     ${ref_fasta} \
     ${fastq} \
     | samtools view -Sbt ${ref_fasta} \
-    | samtools sort - -o ${basename}_{platform}.bam
+    | samtools sort - -o ${basename}_${platform}.bam
 	"""
 
 }
@@ -134,8 +134,10 @@ process EXTRACT_DESIRED_REGIONS {
     tuple path("${basename}_${platform}_${file_label}.fastq.gz"), val(basename), val(platform), val(file_label)
 
 	script:
-    basename = file(bam).getSimpleName().split("_")[0]
-    platform = file(bam).getSimpleName().split("_")[1]
+    bam_components = bam.toString().replace(".bam", "").split("_")
+    assert bam_components.size == 2 : "Necessary information could not be parse from $bam.toString()."
+    basename = bam_components[0]
+    platform = bam_components[1]
 	"""
     samtools index ${bam}
     samtools view -b ${bam} ${expression} \
