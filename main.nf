@@ -35,8 +35,9 @@ workflow {
 
 
 	// Workflow steps
-    QUICK_SPLIT_PACBIO_FASTQ (
+    QUICK_SPLIT_FASTQ (
         ch_pb_reads
+            .mix ( ch_ont_reads )
     )
 
     QUICK_SPLIT_ONT_FASTQ (
@@ -44,15 +45,20 @@ workflow {
     )
 
     MAP_TO_REF (
-        QUICK_SPLIT_PACBIO_FASTQ.out
-            .flatten( )
+        QUICK_SPLIT_FASTQ.out
+            .filter { fastq, platform -> platform == "pacbio" }
+            .map { fastqs, platform -> fastqs }
+            .flatten ( )
             .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" ) }
             .mix (
-                QUICK_SPLIT_ONT_FASTQ.out
-                    .flatten( )
+
+                QUICK_SPLIT_FASTQ.out
+                    .filter { fastq, platform -> platform == "ont" }
+                    .map { fastqs, platform -> fastqs }
+                    .flatten ( )
                     .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
-            ),
-        ch_ref
+
+            )
     )
 
     EXTRACT_DESIRED_REGIONS (
@@ -90,7 +96,10 @@ workflow {
 // --------------------------------------------------------------- //
 // Additional parameters that are derived from parameters set in nextflow.config
 
+// where to place the PacBio and ONT FASTQ for each extracted region
 params.extracted = params.results + "/01_extracted_regions"
+
+// where to place hifiasm results, including a FASTA of contigs
 params.assembly = params.results + "/02_hifiasm_assembly"
 
 // --------------------------------------------------------------- //
@@ -101,44 +110,17 @@ params.assembly = params.results + "/02_hifiasm_assembly"
 // PROCESS SPECIFICATION 
 // --------------------------------------------------------------- //
 
-process QUICK_SPLIT_PACBIO_FASTQ {
+process QUICK_SPLIT_FASTQ {
 
 	/* */
 
-    tag "PacBio, ${params.split_max} reads per file."
+    tag "${platform}, ${params.split_max} reads per file"
     label "seqkit"
 
     cpus params.cpus
 
     input:
-    path big_ol_fastq
-
-    output:
-    path "split/*.fastq.gz"
-
-    script:
-    """
-    seqkit split2 \
-    --by-size ${params.split_max} \
-    --extension ".gz" \
-    --out-dir split/ \
-    --threads ${task.cpus} \
-    ${big_ol_fastq}
-    """
-
-}
-
-process QUICK_SPLIT_ONT_FASTQ {
-
-	/* */
-
-    tag "ONT, ${params.split_max} reads per file."
-    label "seqkit"
-
-    cpus params.cpus
-
-    input:
-    path big_ol_fastq
+    tuple path(big_ol_fastq), val(platform)
 
     output:
     path "split/*.fastq.gz"
