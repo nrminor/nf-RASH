@@ -40,10 +40,6 @@ workflow {
             .mix ( ch_ont_reads )
     )
 
-    QUICK_SPLIT_ONT_FASTQ (
-        ch_ont_reads
-    )
-
     MAP_TO_REF (
         QUICK_SPLIT_FASTQ.out
             .filter { fastq, platform -> platform == "pacbio" }
