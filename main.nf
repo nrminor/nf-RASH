@@ -108,7 +108,7 @@ process QUICK_SPLIT_PACBIO_FASTQ {
     tag "PacBio, ${params.split_max} reads per file."
     label "seqkit"
 
-    cpus ${params.cpus}
+    cpus params.cpus
 
     input:
     path big_ol_fastq
@@ -135,7 +135,7 @@ process QUICK_SPLIT_ONT_FASTQ {
     tag "ONT, ${params.split_max} reads per file."
     label "seqkit"
 
-    cpus ${params.cpus}
+    cpus params.cpus
 
     input:
     path big_ol_fastq
@@ -162,7 +162,7 @@ process MAP_TO_REF {
 	tag "${basename}, ${platform}"
     label "map_and_extract"
 
-    cpus ${params.cpus}
+    cpus params.cpus
 
 	input:
     tuple path(fastq), val(basename), val(platform)
@@ -190,7 +190,7 @@ process EXTRACT_DESIRED_REGIONS {
 	tag "${basename}, ${platform}, ${file_label}"
     label "map_and_extract"
 
-    cpus ${params.cpus}
+    cpus params.cpus
 
 	input:
     each path(bam)
@@ -222,7 +222,7 @@ process MERGE_PACBIO_FASTQS {
     label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
-    cpus ${params.cpus}
+    cpus params.cpus
 
 	input:
     tuple path("to_merge/*"), val(basename), val(platform), val(file_label)
@@ -249,7 +249,7 @@ process MERGE_ONT_FASTQS {
     label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
-    cpus ${params.cpus}
+    cpus params.cpus
 
 	input:
     tuple path("to_merge/*"), val(basename), val(platform), val(file_label)
@@ -275,7 +275,7 @@ process RUN_HIFIASM {
 	tag "${basename}, ${file_label}"
 	publishDir "${params.assembly}/${basename}_${file_label}", mode: 'copy', overwrite: true
 
-    cpus ${params.cpus}
+    cpus params.cpus
 
 	input:
     tuple path(pb_fastq), val(basename), val(platform), val(file_label)
