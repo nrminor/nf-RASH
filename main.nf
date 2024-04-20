@@ -21,13 +21,9 @@ workflow {
 	// input channels
     ch_pb_reads = Channel
         .fromPath ( params.pb_fastq )
-        .splitFastq ( by: params.split_max, file: true, compress: true )
-        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" ) }
 
     ch_ont_reads = Channel
         .fromPath ( params.ont_fastq )
-        .splitFastq ( by: params.split_max, file: true, compress: true )
-        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
     
     ch_ref = Channel
         .fromPath ( params.ref_fasta )
@@ -36,12 +32,24 @@ workflow {
         .fromPath ( params.desired_regions )
         .splitCsv( header: true, sep: "\t", strip: true )
         .map { row -> tuple( row.samtools_expression, row.file_label, row.description ) }
-	
-	
+
+
 	// Workflow steps
-    MAP_TO_REF (
+    QUICK_SPLIT_PACBIO_FASTQ (
         ch_pb_reads
-            .mix ( ch_ont_reads ),
+    )
+
+    QUICK_SPLIT_ONT_FASTQ (
+        ch_ont_reads
+    )
+
+    MAP_TO_REF (
+        QUICK_SPLIT_PACBIO_FASTQ.out
+            .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
+            .mix (
+                QUICK_SPLIT_ONT_FASTQ.out
+                    .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
+            ),
         ch_ref
     )
 
@@ -90,6 +98,60 @@ params.assembly = params.results + "/02_hifiasm_assembly"
 
 // PROCESS SPECIFICATION 
 // --------------------------------------------------------------- //
+
+process QUICK_SPLIT_PACBIO_FASTQ {
+
+	/* */
+
+    tag "PacBio, ${params.split_max} reads per file."
+    label "seqkit"
+
+    cpus 10
+
+    input:
+    path big_ol_fastq
+
+    output:
+    path "split/*.fastq.gz"
+
+    script:
+    """
+    seqkit split2 \
+    --by-size ${params.split_max} \
+    --extension ".gz" \
+    --out-dir split/ \
+    --threads ${task.cpus} \
+    ${big_ol_fastq}
+    """
+
+}
+
+process QUICK_SPLIT_ONT_FASTQ {
+
+	/* */
+
+    tag "ONT, ${params.split_max} reads per file."
+    label "seqkit"
+
+    cpus 10
+
+    input:
+    path big_ol_fastq
+
+    output:
+    path "split/*.fastq.gz"
+
+    script:
+    """
+    seqkit split2 \
+    --by-size ${params.split_max} \
+    --extension ".gz" \
+    --out-dir split/ \
+    --threads ${task.cpus} \
+    ${big_ol_fastq}
+    """
+
+}
 
 process MAP_TO_REF {
 
@@ -153,6 +215,7 @@ process MERGE_PACBIO_FASTQS {
 	/* */
 
     tag "${basename}, ${platform}, ${file_label}"
+    label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
     cpus 10
@@ -179,6 +242,7 @@ process MERGE_ONT_FASTQS {
 	/* */
 
     tag "${basename}, ${platform}, ${file_label}"
+    label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
     cpus 10
