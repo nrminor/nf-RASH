@@ -294,7 +294,7 @@ process CONVERT_CONTIGS_TO_FASTA {
 	shell:
 	'''
     awk '/^S/{print ">"$2"n"$3}' hifiasm_files/!{basename}_!{file_label}.bp.p_ctg.gfa \
-    | fold > ${basename}_${file_label}.p_contigs.fasta
+    | fold > !{basename}_!{file_label}.p_contigs.fasta
 	'''
 
 }
