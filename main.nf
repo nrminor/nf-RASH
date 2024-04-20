@@ -206,7 +206,7 @@ process MERGE_PACBIO_FASTQS {
     cpus params.cpus
 
 	input:
-    tuple path("to_merge/*"), val(basename), val(platform), val(file_label)
+    tuple path("to_merge/???.fastq.gz"), val(basename), val(platform), val(file_label)
 
 	output:
     tuple path("${basename}_${platform}_${file_label}.fastq.gz"), val(basename), val(platform), val(file_label)
