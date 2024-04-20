@@ -54,7 +54,8 @@ workflow {
                     .flatten ( )
                     .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
 
-            )
+            ),
+            ch_ref
     )
 
     EXTRACT_DESIRED_REGIONS (
