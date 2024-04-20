@@ -21,9 +21,11 @@ workflow {
 	// input channels
     ch_pb_reads = Channel
         .fromPath ( params.pb_fastq )
+        .map { fastq -> tuple( file(fastq), "pacbio" )}
 
     ch_ont_reads = Channel
         .fromPath ( params.ont_fastq )
+        .map { fastq -> tuple( file(fastq), "ont" )}
     
     ch_ref = Channel
         .fromPath ( params.ref_fasta )
@@ -120,7 +122,7 @@ process QUICK_SPLIT_FASTQ {
     tuple path(big_ol_fastq), val(platform)
 
     output:
-    path "split/*.fastq.gz"
+    tuple path("split/*.fastq.gz"), val(platform)
 
     script:
     """
