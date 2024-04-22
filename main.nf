@@ -182,7 +182,7 @@ process EXTRACT_DESIRED_REGIONS {
 
 	script:
     bam_components = bam.toString().replace(".bam", "").split("_")
-    assert bam_components.size == 2 : "Necessary information could not be parse from $bam.toString()."
+    assert bam_components.size() == 2 : "Necessary information could not be parse from $bam.toString()."
     basename = bam_components[0]
     platform = bam_components[1]
 	"""
