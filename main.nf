@@ -5,7 +5,7 @@ nextflow.enable.dsl = 2
 
 
 // WORKFLOW SPECIFICATION
-// --------------------------------------------------------------- //
+// -------------------------------------------------------------------------- //
 workflow {
 
 
@@ -87,12 +87,12 @@ workflow {
     )
 
 }
-// --------------------------------------------------------------- //
+// -------------------------------------------------------------------------- //
 
 
 
 // DERIVATIVE PARAMETER SPECIFICATION
-// --------------------------------------------------------------- //
+// -------------------------------------------------------------------------- //
 // Additional parameters that are derived from parameters set in nextflow.config
 
 // where to place the PacBio and ONT FASTQ for each extracted region
@@ -101,17 +101,29 @@ params.extracted = params.results + "/01_extracted_regions"
 // where to place hifiasm results, including a FASTA of contigs
 params.assembly = params.results + "/02_hifiasm_assembly"
 
-// --------------------------------------------------------------- //
+// -------------------------------------------------------------------------- //
 
 
 
 
 // PROCESS SPECIFICATION 
-// --------------------------------------------------------------- //
+// -------------------------------------------------------------------------- //
 
 process QUICK_SPLIT_FASTQ {
 
-	/* */
+	/*
+    Rather than using Nextflow's fastq-splitting API (which is very cool but 
+    also slow), we use Seqkit to split the FASTQs into smaller pieces based on
+    the `split_max` parameter in `nextflow.config`. By default, this parameter
+    tells Seqkit to split the large input FASTQ's into as many FASTQs as it
+    takes for each to have no more than 500,000 reads. In our experience, this
+    results in FASTQ's that are 3 to 5 GB in size each.
+
+    Each split FASTQ is mapped to a reference downstream, and then in parallel,
+    regions based on that reference are extracted from each split FASTQ. Because
+    the input FASTQ's are often very large, splitting makes mapping and region
+    extraction considerable faster and less computationally intensive.
+    */
 
     tag "${platform}, ${params.split_max} reads per file"
     label "seqkit"
@@ -141,7 +153,11 @@ process QUICK_SPLIT_FASTQ {
 
 process MAP_TO_REF {
 
-	/* */
+	/*
+    Users provide a reference with the parameter `ref_fasta` in
+    `nextflow.config`, which is used to bait out reads that are likely to 
+    contain regions of interest.
+    */
 
 	tag "${basename}, ${platform}"
     label "map_and_extract"
@@ -172,7 +188,14 @@ process MAP_TO_REF {
 
 process EXTRACT_DESIRED_REGIONS {
 
-	/* */
+	/* 
+    Users provide a TSV of regions of interest with the parameter 
+    `desired_regions` in `nextflow.config`. Each row of that TSV is split into
+    its own task in queue. Every input FASTQ to this process is thus
+    multiplexed across regions called for in the TSV; if there are N rows, each
+    FASTQ will be run through this process N times to extract reads mapping to
+    those N regions.
+    */
 
 	tag "${basename}, ${platform}, ${file_label}"
     label "map_and_extract"
@@ -191,7 +214,7 @@ process EXTRACT_DESIRED_REGIONS {
 
 	script:
     bam_components = bam.toString().replace(".bam", "").split("_")
-    assert bam_components.size() == 2 : "Necessary information could not be parse from $bam.toString()."
+    assert bam_components.size() == 2 : "Necessary information could not be parsed from $bam.toString()."
     basename = bam_components[0]
     platform = bam_components[1]
 	"""
@@ -206,7 +229,12 @@ process EXTRACT_DESIRED_REGIONS {
 
 process MERGE_PACBIO_FASTQS {
 
-	/* */
+	/*
+    Now that we've split, mapped, and extracted regions from our input FASTQs,
+    we need to merge them back together such that we have one PacBio FASTQ and
+    one Oxford Nanopore FASTQ for each region. This process uses Seqkit to
+    run these merges performantly on PacBio reads.
+    */
 
     tag "${basename}, ${platform}, ${file_label}"
     label "seqkit"
@@ -236,7 +264,12 @@ process MERGE_PACBIO_FASTQS {
 
 process MERGE_ONT_FASTQS {
 
-	/* */
+	/*
+    Now that we've split, mapped, and extracted regions from our input FASTQs,
+    we need to merge them back together such that we have one PacBio FASTQ and
+    one Oxford Nanopore FASTQ for each region. This process uses Seqkit to
+    run these merges performantly on Oxford Nanopore reads.
+    */
 
     tag "${basename}, ${platform}, ${file_label}"
     label "seqkit"
@@ -266,7 +299,13 @@ process MERGE_ONT_FASTQS {
 
 process RUN_HIFIASM {
 
-	/* */
+	/*
+    Now that we have PacBio and Oxford Nanopore FASTQs prepared for all regions
+    requested in the `desired_regions` parameter TSV (see above), we're ready
+    to run hybrid assembly on them with Hifiasm. This process handles assembly,
+    making sure that only FASTQs with matching regions are assembled together
+    with the Nextflow when-block.
+    */
 
 	tag "${pb_basename}, ${file_label1}"
 	publishDir "${params.assembly}/${basename}_${file_label}", mode: 'copy', overwrite: true
@@ -295,7 +334,11 @@ process RUN_HIFIASM {
 
 process CONVERT_CONTIGS_TO_FASTA {
 
-	/* */
+	/*
+    A cute trick from https://hifiasm.readthedocs.io/en/latest/faq.html#id1
+    allows us to convert our contigs into a FASTA file that we can then
+    inspect in Geneious (or wherever).
+    */
 
 	tag "${basename}, ${platform}, ${file_label}"
     label "map_and_extract"
@@ -317,4 +360,4 @@ process CONVERT_CONTIGS_TO_FASTA {
 
 }
 
-// --------------------------------------------------------------- //
+// -------------------------------------------------------------------------- //
