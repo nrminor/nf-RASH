@@ -243,8 +243,8 @@ process MERGE_ONT_FASTQS {
     seqkit scat \
     --threads ${task.cpus} \
     --find-only \
-    --out-format fastq
-    to_merge/ | gzip -c > ${basename}_${platform}_${file_label}.fastq.gz
+    --out-format fastq ./to_merge/ \
+    | gzip -c > ${basename}_${platform}_${file_label}.fastq.gz
 	"""
 
 }
