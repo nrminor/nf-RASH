@@ -281,7 +281,7 @@ process RUN_HIFIASM {
     tuple path(ont_fastq), val(ont_basename), val(ont_platform), val(file_label2)
 
 	output:
-    tuple path("*"), val(pb_basename), val(platform), val(file_label1)
+    tuple path("*"), val(pb_basename), val(pb_platform), val(file_label1)
 
     when:
     file_label1 == file_label2
