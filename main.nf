@@ -253,7 +253,7 @@ process RUN_HIFIASM {
 
 	/* */
 
-	tag "${basename}, ${file_label}"
+	tag "${pb_basename}, ${file_label1}"
 	publishDir "${params.assembly}/${basename}_${file_label}", mode: 'copy', overwrite: true
 
     cpus params.cpus
