@@ -116,6 +116,9 @@ process QUICK_SPLIT_FASTQ {
     tag "${platform}, ${params.split_max} reads per file"
     label "seqkit"
 
+	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
+	maxRetries 2
+
     cpus params.cpus
 
     input:
@@ -142,6 +145,9 @@ process MAP_TO_REF {
 
 	tag "${basename}, ${platform}"
     label "map_and_extract"
+
+	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
+	maxRetries 2
 
     cpus params.cpus
 
@@ -170,6 +176,9 @@ process EXTRACT_DESIRED_REGIONS {
 
 	tag "${basename}, ${platform}, ${file_label}"
     label "map_and_extract"
+
+	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
+	maxRetries 2
 
     cpus params.cpus
 
@@ -203,6 +212,9 @@ process MERGE_PACBIO_FASTQS {
     label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
+	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
+	maxRetries 2
+
     cpus params.cpus
 
 	input:
@@ -230,6 +242,9 @@ process MERGE_ONT_FASTQS {
     label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
+	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
+	maxRetries 2
+
     cpus params.cpus
 
 	input:
@@ -255,6 +270,9 @@ process RUN_HIFIASM {
 
 	tag "${pb_basename}, ${file_label1}"
 	publishDir "${params.assembly}/${basename}_${file_label}", mode: 'copy', overwrite: true
+
+	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
+	maxRetries 2
 
     cpus params.cpus
 
