@@ -68,13 +68,13 @@ workflow {
     MERGE_PACBIO_FASTQS (
         EXTRACT_DESIRED_REGIONS.out
             .filter { x -> x[2] == "pacbio" }
-            .groupTuple( by: [ 1, 2, 3] )
+            .groupTuple( by: [ 1, 2, 3 ] )
     )
 
     MERGE_ONT_FASTQS (
         EXTRACT_DESIRED_REGIONS.out
             .filter { x -> x[2] == "ont" }
-            .groupTuple( by: [ 1, 2, 3] )
+            .groupTuple( by: [ 1, 2, 3 ] )
     )
 
     RUN_HIFIASM (
@@ -256,8 +256,8 @@ process MERGE_PACBIO_FASTQS {
     seqkit scat \
     --threads ${task.cpus} \
     --find-only \
-    --out-format fastq \
-    to_merge/ | gzip -c > ${basename}_${platform}_${file_label}.fastq.gz
+    --out-format fastq ./to_merge/ \
+    | gzip -c > ${basename}_${platform}_${file_label}.fastq.gz
 	"""
 
 }
