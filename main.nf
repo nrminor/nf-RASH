@@ -3,6 +3,30 @@
 nextflow.enable.dsl = 2
 
 
+log.info    """
+			EXTRACT-AND-ASSEMBLE: A Nextflow pipeline for extracting genome regions
+            of interest from PacBio and Oxford Nanopore sequencing reads and running
+            them through high-accuracy hybrid assembly.
+			(version 0.1.0)
+			===================================
+
+            Inputs and Outputs:
+            ----------------------------------
+			PacBio FASTQ           : ${params.pb_fastq}
+			ONT FASTQ              : ${params.pb_fastq}
+			Reference FASTA        : ${params.ref_fasta}
+            Regions TSV            : ${params.desired_regions}
+			results_dir            : ${params.results}
+
+			Run settings:
+			-----------------------------------
+            [Reads per split FASTQ : ${params.split_max}]
+			[cleanup               : ${params.cleanup}]
+			[cpus per task         : ${params.cpus}]
+
+			"""
+			.stripIndent()
+
 
 // WORKFLOW SPECIFICATION
 // -------------------------------------------------------------------------- //
