@@ -319,7 +319,7 @@ process RUN_HIFIASM {
     cpus params.cpus
 
 	input:
-    tuple path(pacbio_fastq), path(ont_fastq), val(basename), val(region)
+    tuple path(pb_fastq), path(ont_fastq), val(basename), val(region)
 
 	output:
     tuple path("*"), val(basename), val(region)
