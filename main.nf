@@ -381,7 +381,7 @@ process CONVERT_CONTIGS_TO_FASTA {
 
 	shell:
 	'''
-    awk '/^S/{print ">"$2"n"$3}' hifiasm_files/!{basename}_!{region}.bp.p_ctg.gfa \
+    awk '/^S/{print ">"$2"\n"$3}' hifiasm_files/!{basename}_!{region}.bp.p_ctg.gfa \
     | fold > !{basename}_!{region}.p_contigs.fasta
 	'''
 
