@@ -68,18 +68,22 @@ workflow {
     MERGE_PACBIO_FASTQS (
         EXTRACT_DESIRED_REGIONS.out
             .filter { x -> x[2] == "pacbio" }
-            .groupTuple( by: [ 1, 2, 3 ] )
+            .groupTuple ( by: [ 1, 2, 3 ] )
     )
 
     MERGE_ONT_FASTQS (
         EXTRACT_DESIRED_REGIONS.out
             .filter { x -> x[2] == "ont" }
-            .groupTuple( by: [ 1, 2, 3 ] )
+            .groupTuple ( by: [ 1, 2, 3 ] )
     )
 
     RUN_HIFIASM (
-        MERGE_PACBIO_FASTQS.out,
-        MERGE_ONT_FASTQS.out
+        MERGE_PACBIO_FASTQS.out
+            .join ( MERGE_ONT_FASTQS.out, by: [ 1, 3 ] )
+            .map { 
+                fastqs, basename, platforms, region -> 
+                    tuple( file(fastqs[0]), file(fastqs[1]), basename, region )
+            }
     )
 
     CONVERT_CONTIGS_TO_FASTA (
@@ -303,12 +307,11 @@ process RUN_HIFIASM {
     Now that we have PacBio and Oxford Nanopore FASTQs prepared for all regions
     requested in the `desired_regions` parameter TSV (see above), we're ready
     to run hybrid assembly on them with Hifiasm. This process handles assembly,
-    making sure that only FASTQs with matching regions are assembled together
-    with the Nextflow when-block.
+    making sure that only FASTQs with matching regions are assembled together.
     */
 
-	tag "${pb_basename}, ${file_label1}"
-	publishDir "${params.assembly}/${basename}_${file_label}", mode: 'copy', overwrite: true
+	tag "${basename}, ${region}"
+	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
@@ -316,16 +319,14 @@ process RUN_HIFIASM {
     cpus params.cpus
 
 	input:
-    tuple path(pb_fastq), val(pb_basename), val(pb_platform), val(file_label1)
-    tuple path(ont_fastq), val(ont_basename), val(ont_platform), val(file_label2)
+    tuple path(first_fastq), path(second_fastq), val(basename), val(region)
 
 	output:
-    tuple path("*"), val(pb_basename), val(pb_platform), val(file_label1)
-
-    when:
-    file_label1 == file_label2
+    tuple path("*"), val(basename), val(region)
 
 	script:
+    ont_fastq = first_fastq.toString().toLowerCase().contains("ont") ? first_fastq : second_fastq
+    pb_fastq = second_fastq.toString().toLowerCase().contains("pacbio") ? second_fastq : first_fastq
 	"""
     hifiasm -o ${pb_basename}_${file_label1} -t ${task.cpus} --ul ${ont_fastq} ${pb_fastq}
 	"""
@@ -342,20 +343,20 @@ process CONVERT_CONTIGS_TO_FASTA {
 
 	tag "${basename}, ${platform}, ${file_label}"
     label "map_and_extract"
-	publishDir params.assembly, mode: 'copy', overwrite: true
+	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
 
     cpus 3
 
 	input:
-    tuple path("hifiasm_files/*"), val(basename), val(platform), val(file_label)
+    tuple path("hifiasm_files/*"), val(basename), val(region)
 
 	output:
-    path "${basename}_${file_label}.p_contigs.fasta"
+    path "${basename}_${region}.p_contigs.fasta"
 
 	shell:
 	'''
-    awk '/^S/{print ">"$2"n"$3}' hifiasm_files/!{basename}_!{file_label}.bp.p_ctg.gfa \
-    | fold > !{basename}_!{file_label}.p_contigs.fasta
+    awk '/^S/{print ">"$2"n"$3}' hifiasm_files/!{basename}_!{region}.bp.p_ctg.gfa \
+    | fold > !{basename}_!{region}.p_contigs.fasta
 	'''
 
 }
