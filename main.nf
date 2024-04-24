@@ -369,6 +369,9 @@ process CONVERT_CONTIGS_TO_FASTA {
     label "map_and_extract"
 	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
 
+	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
+	maxRetries 2
+
     cpus 3
 
 	input:
