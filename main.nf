@@ -84,7 +84,6 @@ workflow {
                 basename, region, pb_fastq, pacbio, ont_fastq, ont -> 
                     tuple( file(pb_fastq), file(ont_fastq), basename, region )
             }
-            .view( )
     )
 
     CONVERT_CONTIGS_TO_FASTA (
@@ -320,14 +319,14 @@ process RUN_HIFIASM {
     cpus params.cpus
 
 	input:
-    tuple path(ont_fastq), path(pacbio_fastq), val(basename), val(region)
+    tuple path(pacbio_fastq), path(ont_fastq), val(basename), val(region)
 
 	output:
     tuple path("*"), val(basename), val(region)
 
 	script:
-    assert ont_fastq.toString().toLowerCase().contains("ont")
     assert pb_fastq.toString().toLowerCase().contains("pacbio")
+    assert ont_fastq.toString().toLowerCase().contains("ont")
 	"""
     hifiasm -o ${basename}_${region} -t ${task.cpus} --ul ${ont_fastq} ${pb_fastq}
 	"""
