@@ -205,9 +205,9 @@ process MAP_TO_REF {
     minimap2_preset = platform == "pacbio" ? "map-hifi" : "map-ont"
 	"""
     minimap2 -t ${task.cpus} -L --eqx -ax ${minimap2_preset} \
-    ${ref_fasta} \
-    ${fastq} \
-    | samtools view -Sbt ${ref_fasta} \
+    `realpath ${ref_fasta}` \
+    `realpath ${fastq}` \
+    | samtools view -Sbt `realpath ${ref_fasta}` \
     | samtools sort - -o ${basename}_${platform}.bam
 	"""
 
