@@ -224,7 +224,7 @@ process EXTRACT_DESIRED_REGIONS {
     those N regions.
     */
 
-	tag "${basename}, ${platform}, ${file_label}"
+	tag "${basename}, ${platform}, ${region}"
     label "map_and_extract"
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
@@ -234,10 +234,10 @@ process EXTRACT_DESIRED_REGIONS {
 
 	input:
     each path(bam)
-    tuple val(expression), val(file_label), val(description)
+    tuple val(expression), val(region), val(description)
 
 	output:
-    tuple path("${basename}_${platform}_${file_label}.fastq.gz"), val(basename), val(platform), val(file_label)
+    tuple path("${basename}_${platform}_${region}.fastq.gz"), val(basename), val(platform), val(region)
 
 	script:
     bam_components = bam.toString().replace(".bam", "").split("_")
@@ -249,7 +249,7 @@ process EXTRACT_DESIRED_REGIONS {
     samtools view -b ${bam} ${expression} \
     | samtools fastq - \
     | reformat.sh qin=33 int=f in=stdin.fq \
-    out=${basename}_${platform}_${file_label}.fastq.gz
+    out=${basename}_${platform}_${region}.fastq.gz
 	"""
 
 }
@@ -263,7 +263,7 @@ process MERGE_PACBIO_FASTQS {
     run these merges performantly on PacBio reads.
     */
 
-    tag "${basename}, ${platform}, ${file_label}"
+    tag "${basename}, ${platform}, ${region}"
     label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
@@ -273,10 +273,10 @@ process MERGE_PACBIO_FASTQS {
     cpus params.cpus
 
 	input:
-    tuple path("to_merge/???.fastq.gz"), val(basename), val(platform), val(file_label)
+    tuple path("to_merge/???.fastq.gz"), val(basename), val(platform), val(region)
 
 	output:
-    tuple path("${basename}_${platform}_${file_label}.fastq.gz"), val(basename), val(platform), val(file_label)
+    tuple path("${basename}_${platform}_${region}.fastq.gz"), val(basename), val(platform), val(region)
 
 	script:
 	"""
@@ -284,7 +284,7 @@ process MERGE_PACBIO_FASTQS {
     --threads ${task.cpus} \
     --find-only \
     --out-format fastq ./to_merge/ \
-    | gzip -c > ${basename}_${platform}_${file_label}.fastq.gz
+    | gzip -c > ${basename}_${platform}_${region}.fastq.gz
 	"""
 
 }
@@ -298,7 +298,7 @@ process MERGE_ONT_FASTQS {
     run these merges performantly on Oxford Nanopore reads.
     */
 
-    tag "${basename}, ${platform}, ${file_label}"
+    tag "${basename}, ${platform}, ${region}"
     label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
@@ -308,10 +308,10 @@ process MERGE_ONT_FASTQS {
     cpus params.cpus
 
 	input:
-    tuple path("to_merge/???.fastq.gz"), val(basename), val(platform), val(file_label)
+    tuple path("to_merge/???.fastq.gz"), val(basename), val(platform), val(region)
 
 	output:
-    tuple path("${basename}_${platform}_${file_label}.fastq.gz"), val(basename), val(platform), val(file_label)
+    tuple path("${basename}_${platform}_${region}.fastq.gz"), val(basename), val(platform), val(region)
 
 	script:
 	"""
@@ -319,7 +319,7 @@ process MERGE_ONT_FASTQS {
     --threads ${task.cpus} \
     --find-only \
     --out-format fastq ./to_merge/ \
-    | gzip -c > ${basename}_${platform}_${file_label}.fastq.gz
+    | gzip -c > ${basename}_${platform}_${region}.fastq.gz
 	"""
 
 }
