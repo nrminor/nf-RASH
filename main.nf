@@ -20,9 +20,10 @@ log.info    """
 
             Run settings:
             -----------------------------------
-            [Reads per split FASTQ : ${params.split_max}]
-            [cleanup               : ${params.cleanup}]
-            [cpus per task         : ${params.cpus}]
+            Reads per split FASTQ : ${params.split_max}
+            Min reads per region  : ${params.min_reads}
+            cleanup               : ${params.cleanup}
+            cpus per task         : ${params.cpus}
             """
             .stripIndent()
 
@@ -106,6 +107,11 @@ workflow {
             .map { 
                 basename, region, pb_fastq, pacbio, ont_fastq, ont -> 
                     tuple( file(pb_fastq), file(ont_fastq), basename, region )
+            }
+            .filter {
+                pb_fastq, ont_fastq, basename, region ->
+                    file(pb_fastq).countFastq() > params.min_reads &&
+                    file(ont_fastq).countFastq() > params.min_reads
             }
     )
 
