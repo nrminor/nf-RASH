@@ -365,7 +365,7 @@ process CONVERT_CONTIGS_TO_FASTA {
     inspect in Geneious (or wherever).
     */
 
-	tag "${basename}, ${platform}, ${file_label}"
+	tag "${basename}, ${region}"
     label "map_and_extract"
 	publishDir "${params.assembly}", mode: 'copy', overwrite: true
 
