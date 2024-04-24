@@ -367,7 +367,7 @@ process CONVERT_CONTIGS_TO_FASTA {
 
 	tag "${basename}, ${platform}, ${file_label}"
     label "map_and_extract"
-	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
+	publishDir "${params.assembly}", mode: 'copy', overwrite: true
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
