@@ -1,5 +1,5 @@
 samtools_expression	file_label	description
-chr6:29,400,000-33,525,000	mhc	GABBR1-KIFC1
+chr6:29,400,000-33,525,000	mhc-all	GABBR1-KIFC1
 chr6:29,400,000-30,033,000	mhc-1a	GABBR1-POLR1H
 chr6:29,400,000-31,499,000	mhc-classI	GABBR1-MCCD1
 chr6:30,033,000-31,130,500	mhc-e	POLR1H-POU5F1
