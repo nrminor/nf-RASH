@@ -81,9 +81,10 @@ workflow {
         MERGE_PACBIO_FASTQS.out
             .join ( MERGE_ONT_FASTQS.out, by: [ 1, 3 ] )
             .map { 
-                fastqs, basename, platforms, region -> 
-                    tuple( file(fastqs[0]), file(fastqs[1]), basename, region )
+                basename, region, pb_fastq, pacbio, ont_fastq, ont -> 
+                    tuple( file(pb_fastq), file(ont_fastq), basename, region )
             }
+            .view( )
     )
 
     CONVERT_CONTIGS_TO_FASTA (
