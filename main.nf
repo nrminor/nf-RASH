@@ -84,6 +84,7 @@ workflow {
                 basename, region, pb_fastq, pacbio, ont_fastq, ont -> 
                     tuple( file(pb_fastq), file(ont_fastq), basename, region )
             }
+            .view( )
     )
 
     CONVERT_CONTIGS_TO_FASTA (
