@@ -23,7 +23,6 @@ log.info    """
             [Reads per split FASTQ : ${params.split_max}]
             [cleanup               : ${params.cleanup}]
             [cpus per task         : ${params.cpus}]
-
             """
             .stripIndent()
 
