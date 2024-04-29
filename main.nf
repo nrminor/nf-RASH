@@ -57,7 +57,11 @@ workflow {
     ch_desired_regions = Channel
         .fromPath ( params.desired_regions )
         .splitCsv( header: true, sep: "\t", strip: true )
-        .map { row -> tuple( row.samtools_expression, row.file_label, row.description ) }
+        .map { 
+            row -> tuple( 
+                "${row.chromosome}:${row.start}-${row.stop}", row.region, row.merge_key
+            ) 
+        }
 
 
 	// Workflow steps
@@ -240,10 +244,10 @@ process EXTRACT_DESIRED_REGIONS {
 
 	input:
     each path(bam)
-    tuple val(expression), val(region), val(description)
+    tuple val(expression), val(region), val(merge_key)
 
 	output:
-    tuple path("${basename}_${platform}_${region}.fastq.gz"), val(basename), val(platform), val(region)
+    tuple path("${basename}_${platform}_${merge_key}.fastq.gz"), val(basename), val(platform), val(merge_key)
 
 	script:
     bam_components = bam.toString().replace(".bam", "").split("_")
@@ -255,7 +259,7 @@ process EXTRACT_DESIRED_REGIONS {
     samtools view -b ${bam} ${expression} \
     | samtools fastq - \
     | reformat.sh qin=33 int=f in=stdin.fq \
-    out=${basename}_${platform}_${region}.fastq.gz
+    out=${basename}_${platform}_${merge_key}.fastq.gz
 	"""
 
 }
