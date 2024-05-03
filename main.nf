@@ -165,6 +165,8 @@ process QUICK_SPLIT_FASTQ {
     tag "${platform}, ${params.split_max} reads per file"
     label "seqkit"
 
+    storeDir "$launchDir/split_fastqs"
+
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
 
