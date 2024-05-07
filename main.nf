@@ -45,11 +45,11 @@ workflow {
 	// input channels
     ch_pb_reads = Channel
         .fromPath ( params.pb_fastq )
-        .map { fastq -> tuple( file(fastq), "pacbio" )}
+        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" )}
 
     ch_ont_reads = Channel
         .fromPath ( params.ont_fastq )
-        .map { fastq -> tuple( file(fastq), "ont" )}
+        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" )}
     
     ch_ref = Channel
         .fromPath ( params.ref_fasta )
@@ -165,7 +165,7 @@ process QUICK_SPLIT_FASTQ {
     tag "${platform}, ${params.split_max} reads per file"
     label "seqkit"
 
-    storeDir "$launchDir/split_fastqs"
+    storeDir "$launchDir/${sample_id}_split_fastqs"
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
@@ -173,7 +173,7 @@ process QUICK_SPLIT_FASTQ {
     cpus params.cpus
 
     input:
-    tuple path(big_ol_fastq), val(platform)
+    tuple path(big_ol_fastq), val(sample_id), val(platform)
 
     output:
     tuple path("split/*.fastq.gz"), val(platform)
