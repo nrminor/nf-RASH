@@ -1,0 +1,4 @@
+chromosome	start	stop	region	merge_key	description
+chr9	132,500,000	138,394,717	ABO	abo	ABO gene
+ABO_Mafa6	1	6,250,000	M6ABO	abo	M6 haplotype ABO
+ABO_rh1990	1	6,258,317	rh1990	abo	rh1990 ABO contig
