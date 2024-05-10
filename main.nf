@@ -56,7 +56,7 @@ workflow {
     
     ch_desired_regions = Channel
         .fromPath ( params.desired_regions )
-        .splitCsv( header: true, sep: "\t", strip: true )
+        .splitCsv ( header: true, sep: "\t", strip: true )
         .map { 
             row -> tuple( 
                 "${row.chromosome}:${row.start}-${row.stop}", row.region, row.merge_key
