@@ -13,7 +13,7 @@ log.info    """
             Inputs and Outputs:
             ----------------------------------
             PacBio FASTQ           : ${params.pb_fastq}
-            ONT FASTQ              : ${params.pb_fastq}
+            ONT FASTQ              : ${params.ont_fastq}
             Reference FASTA        : ${params.ref_fasta}
             Regions TSV            : ${params.desired_regions}
             results_dir            : ${params.results}
