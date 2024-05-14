@@ -180,6 +180,7 @@ process QUICK_SPLIT_FASTQ {
 
     script:
     """
+    seqkit faidx --threads ${task.cpus} ${big_ol_fastq} && \
     seqkit split2 \
     --by-size ${params.split_max} \
     --extension ".gz" \
