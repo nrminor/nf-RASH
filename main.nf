@@ -2,6 +2,8 @@
 
 nextflow.enable.dsl = 2
 
+include { HYBRID } from './workflows/hybrid'
+include { HIFI_ONLY } from './workflows/hifi_only'
 
 log.info    """
             EXTRACT-AND-ASSEMBLE: A Nextflow pipeline for extracting genome regions
@@ -13,7 +15,7 @@ log.info    """
             Inputs and Outputs:
             ----------------------------------
             PacBio FASTQ           : ${params.pb_fastq}
-            ONT FASTQ              : ${params.ont_fastq}
+            ONT FASTQ (optional)   : ${params.ont_fastq}
             Reference FASTA        : ${params.ref_fasta}
             Regions TSV            : ${params.desired_regions}
             results_dir            : ${params.results}
@@ -32,12 +34,9 @@ log.info    """
 // -------------------------------------------------------------------------- //
 workflow {
 
-
     // make sure the user provided inputs that exist
     assert params.pb_fastq : "Please provide a PacBio HiFi CCS FASTQ.gz file with the --pb_fastq argument."
     assert file(params.pb_fastq).exists() : "Provided path to PacBio FASTQ does not exist."
-	assert params.ont_fastq : "Please provide a Oxford Nanopore FASTQ.gz file file with the --ont_fastq argument."
-    assert file(params.ont_fastq).exists() : "Provided path to Nanopore FASTQ does not exist."
 	assert params.ref_fasta : "Please provide a reference FASTA with the --ref_fasta argument."
     assert file(params.ref_fasta).exists() : "Provided path to reference FASTA does not exist."
 
@@ -47,9 +46,10 @@ workflow {
         .fromPath ( params.pb_fastq )
         .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" )}
 
-    ch_ont_reads = Channel
-        .fromPath ( params.ont_fastq )
-        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" )}
+    ch_ont_reads = params.ont_fastq ?
+        Channel.fromPath ( params.ont_fastq )
+        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" )} :
+        Channel.empty()
     
     ch_ref = Channel
         .fromPath ( params.ref_fasta )
@@ -63,65 +63,27 @@ workflow {
             ) 
         }
 
+    if ( params.ont_fastq ) {
 
-	// Workflow steps
-    QUICK_SPLIT_FASTQ (
-        ch_pb_reads
-            .mix ( ch_ont_reads )
-    )
+        assert params.ont_fastq : "Please provide a Oxford Nanopore FASTQ.gz file file with the --ont_fastq argument."
+        assert file(params.ont_fastq).exists() : "Provided path to Nanopore FASTQ does not exist."
 
-    MAP_TO_REF (
-        QUICK_SPLIT_FASTQ.out
-            .filter { fastq, platform -> platform == "pacbio" }
-            .map { fastqs, platform -> fastqs }
-            .flatten ( )
-            .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" ) }
-            .mix (
+        HYBRID (
+            ch_pb_reads,
+            ch_ont_reads,
+            ch_ref,
+            ch_desired_regions
+        )
 
-                QUICK_SPLIT_FASTQ.out
-                    .filter { fastq, platform -> platform == "ont" }
-                    .map { fastqs, platform -> fastqs }
-                    .flatten ( )
-                    .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
+    } else {
 
-            ),
-            ch_ref
-    )
+        HIFI_ONLY (
+            ch_pb_reads,
+            ch_ref,
+            ch_desired_regions
+        )
 
-    EXTRACT_DESIRED_REGIONS (
-        MAP_TO_REF.out,
-        ch_desired_regions
-    )
-
-    MERGE_PACBIO_FASTQS (
-        EXTRACT_DESIRED_REGIONS.out
-            .filter { x -> x[2] == "pacbio" }
-            .groupTuple ( by: [ 1, 2, 3 ] )
-    )
-
-    MERGE_ONT_FASTQS (
-        EXTRACT_DESIRED_REGIONS.out
-            .filter { x -> x[2] == "ont" }
-            .groupTuple ( by: [ 1, 2, 3 ] )
-    )
-
-    RUN_HIFIASM (
-        MERGE_PACBIO_FASTQS.out
-            .join ( MERGE_ONT_FASTQS.out, by: [ 1, 3 ] )
-            .map { 
-                basename, region, pb_fastq, pacbio, ont_fastq, ont -> 
-                    tuple( file(pb_fastq), file(ont_fastq), basename, region )
-            }
-            .filter {
-                pb_fastq, ont_fastq, basename, region ->
-                    file(pb_fastq).countFastq() > params.min_reads &&
-                    file(ont_fastq).countFastq() > params.min_reads
-            }
-    )
-
-    CONVERT_CONTIGS_TO_FASTA (
-        RUN_HIFIASM.out
-    )
+    }
 
 }
 // -------------------------------------------------------------------------- //
@@ -365,6 +327,37 @@ process RUN_HIFIASM {
     assert ont_fastq.toString().toLowerCase().contains("ont")
 	"""
     hifiasm -o ${basename}_${region} -t ${task.cpus} --ul ${ont_fastq} ${pb_fastq}
+	"""
+
+}
+
+process RUN_HIFIASM_HIFI_ONLY {
+
+	/*
+    Now that we have PacBio and Oxford Nanopore FASTQs prepared for all regions
+    requested in the `desired_regions` parameter TSV (see above), we're ready
+    to run hybrid assembly on them with Hifiasm. This process handles assembly,
+    making sure that only FASTQs with matching regions are assembled together.
+    */
+
+	tag "${basename}, ${region}"
+	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
+
+	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
+	maxRetries 2
+
+    cpus params.cpus
+
+	input:
+    tuple path(pb_fastq), val(basename), val(region)
+
+	output:
+    tuple path("*"), val(basename), val(region)
+
+	script:
+    assert pb_fastq.toString().toLowerCase().contains("pacbio")
+	"""
+    hifiasm -o ${basename}_${region} -t ${task.cpus} ${pb_fastq}
 	"""
 
 }
