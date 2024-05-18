@@ -65,7 +65,6 @@ workflow {
 
     if ( params.ont_fastq ) {
 
-        assert params.ont_fastq : "Please provide a Oxford Nanopore FASTQ.gz file file with the --ont_fastq argument."
         assert file(params.ont_fastq).exists() : "Provided path to Nanopore FASTQ does not exist."
 
         HYBRID (
