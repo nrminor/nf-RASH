@@ -6,10 +6,14 @@ include { HYBRID } from './workflows/hybrid'
 include { HIFI_ONLY } from './workflows/hifi_only'
 
 log.info    """
-            EXTRACT-AND-ASSEMBLE: A Nextflow pipeline for extracting genome regions
-            of interest from PacBio and Oxford Nanopore sequencing reads and running
-            them through high-accuracy hybrid assembly.
-            (version 0.1.0)
+            RASH: Regional ASsembly Helper
+            ------------------------------
+            RASH is a containerized Nextflow pipeline for extracting genome regions
+            of interest from PacBio HiFi and Oxford Nanopore sequencing reads and 
+            running them through high-accuracy hybrid assembly using Hifiasm.
+            RASH also supports HiFi-only assembly through the hifi_only workflow,
+            which will be invoked when a Nanopore FASTQ isn't provided by the user.
+            (version 0.1.2)
             ===================================
 
             Inputs and Outputs:
