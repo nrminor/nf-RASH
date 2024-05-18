@@ -50,7 +50,7 @@ workflow HIFI_ONLY {
         )
 
         CONVERT_CONTIGS_TO_FASTA (
-            RUN_HIFIASM.out
+            RUN_HIFIASM_HIFI_ONLY.out
         )
 
 }
