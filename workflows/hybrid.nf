@@ -1,5 +1,13 @@
 #!/usr/bin/env nextflow
 
+include { QUICK_SPLIT_FASTQ } from '../modules/quick_split_fastqs'
+include { MAP_TO_REF } from '../modules/map_to_ref'
+include { EXTRACT_REGIONS } from '../modules/extract_regions'
+include { MERGE_PACBIO_FASTQS } from '../modules/merge_fastqs'
+include { MERGE_ONT_FASTQS } from '../modules/merge_fastqs'
+include { RUN_HIFIASM } from '../modules/hifiasm'
+include { CONVERT_CONTIGS_TO_FASTA } from '../modules/convert_to_fasta'
+
 workflow HYBRID {
 
     take:
@@ -32,19 +40,19 @@ workflow HYBRID {
                 ch_ref
         )
 
-        EXTRACT_DESIRED_REGIONS (
+        EXTRACT_REGIONS (
             MAP_TO_REF.out,
             ch_desired_regions
         )
 
         MERGE_PACBIO_FASTQS (
-            EXTRACT_DESIRED_REGIONS.out
+            EXTRACT_REGIONS.out
                 .filter { x -> x[2] == "pacbio" }
                 .groupTuple ( by: [ 1, 2, 3 ] )
         )
 
         MERGE_ONT_FASTQS (
-            EXTRACT_DESIRED_REGIONS.out
+            EXTRACT_REGIONS.out
                 .filter { x -> x[2] == "ont" }
                 .groupTuple ( by: [ 1, 2, 3 ] )
         )

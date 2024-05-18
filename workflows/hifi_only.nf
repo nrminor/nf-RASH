@@ -1,5 +1,12 @@
 #!/usr/bin/env nextflow
 
+include { QUICK_SPLIT_FASTQ } from '../modules/quick_split_fastqs'
+include { MAP_TO_REF } from '../modules/map_to_ref'
+include { EXTRACT_REGIONS } from '../modules/extract_regions'
+include { MERGE_PACBIO_FASTQS } from '../modules/merge_fastqs'
+include { RUN_HIFIASM_HIFI_ONLY } from '../modules/hifiasm'
+include { CONVERT_CONTIGS_TO_FASTA } from '../modules/convert_to_fasta'
+
 workflow HIFI_ONLY {
     
     take:
@@ -20,18 +27,18 @@ workflow HIFI_ONLY {
                 ch_ref
         )
 
-        EXTRACT_DESIRED_REGIONS (
+        EXTRACT_REGIONS (
             MAP_TO_REF.out,
             ch_desired_regions
         )
 
         MERGE_PACBIO_FASTQS (
-            EXTRACT_DESIRED_REGIONS.out
+            EXTRACT_REGIONS.out
                 .groupTuple ( by: [ 1, 2, 3 ] )
         )
 
         RUN_HIFIASM_HIFI_ONLY (
-            MERGE_PACBIO_FASTQS.out
+            EXTRACT_REGIONS.out
                 .map { 
                     basename, region, pb_fastq, pacbio, ont_fastq, ont -> 
                         tuple( file(pb_fastq), file(ont_fastq), basename, region )
@@ -47,4 +54,3 @@ workflow HIFI_ONLY {
         )
 
 }
-// -------------------------------------------------------------------------- //
