@@ -38,13 +38,13 @@ workflow HIFI_ONLY {
         )
 
         RUN_HIFIASM_HIFI_ONLY (
-            EXTRACT_REGIONS.out
+            MERGE_PACBIO_FASTQS.out
                 .map { 
-                    basename, region, pb_fastq, pacbio, ont_fastq, ont -> 
-                        tuple( file(pb_fastq), file(ont_fastq), basename, region )
+                    pb_fastq, basename, platform, region -> 
+                        tuple( file(pb_fastq), basename, region )
                 }
                 .filter {
-                    pb_fastq, ont_fastq, basename, region ->
+                    pb_fastq, basename, region ->
                         file(pb_fastq).countFastq() > params.min_reads
                 }
         )
