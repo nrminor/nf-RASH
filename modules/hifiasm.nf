@@ -8,6 +8,8 @@ process RUN_HIFIASM {
     */
 
 	tag "${basename}, ${region}"
+    label "hifiasm"
+
 	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
@@ -40,6 +42,8 @@ process RUN_HIFIASM_HIFI_ONLY {
     */
 
 	tag "${basename}, ${region}"
+    label "hifiasm"
+
 	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
