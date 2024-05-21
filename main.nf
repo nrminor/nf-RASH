@@ -5,6 +5,7 @@ nextflow.enable.dsl = 2
 include { HYBRID } from './workflows/hybrid'
 include { HIFI_ONLY } from './workflows/hifi_only'
 
+// log out some of the information provided by the user
 log.info    """
             RASH: Regional ASsembly Helper
             ------------------------------
@@ -33,25 +34,19 @@ log.info    """
             """
             .stripIndent()
 
-
+// define the main workflow
 workflow {
 
-    // make sure the user provided inputs that exist
+    // make sure the user provided inputs exist
     assert params.pb_fastq : "Please provide a PacBio HiFi CCS FASTQ.gz file with the --pb_fastq argument."
     assert file(params.pb_fastq).exists() : "Provided path to PacBio FASTQ does not exist."
 	assert params.ref_fasta : "Please provide a reference FASTA with the --ref_fasta argument."
     assert file(params.ref_fasta).exists() : "Provided path to reference FASTA does not exist."
 
-
-	// input channels
+	// input channels shared by both workflows
     ch_pb_reads = Channel
         .fromPath ( params.pb_fastq )
         .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" )}
-
-    ch_ont_reads = params.ont_fastq ?
-        Channel.fromPath ( params.ont_fastq )
-        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" )} :
-        Channel.empty()
     
     ch_ref = Channel
         .fromPath ( params.ref_fasta )
@@ -68,8 +63,15 @@ workflow {
     // if an ont fastq is provided, run hybrid assembly
     if ( params.ont_fastq ) {
 
+        // raise an error if the provided ont FASTQ path doesn't exist
         assert file(params.ont_fastq).exists() : "Provided path to Nanopore FASTQ does not exist."
 
+        // create the ont channel tuple
+        ch_ont_reads = Channel
+            .fromPath ( params.ont_fastq )
+            .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" )}
+
+        // run hybrid assembly
         HYBRID (
             ch_pb_reads,
             ch_ont_reads,
@@ -80,6 +82,7 @@ workflow {
     // otherwise, just use the provided PacBio HiFi reads
     } else {
 
+        // run hifi-only assembly
         HIFI_ONLY (
             ch_pb_reads,
             ch_ref,
