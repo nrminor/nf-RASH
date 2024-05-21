@@ -8,7 +8,7 @@ include { HIFI_ONLY } from './workflows/hifi_only'
 // log out some of the information provided by the user
 log.info    """
             RASH: Regional ASsembly Helper
-            ------------------------------
+            ===================================
             RASH is a containerized Nextflow pipeline for extracting genome regions
             of interest from PacBio HiFi and Oxford Nanopore sequencing reads and 
             running them through high-accuracy hybrid assembly using Hifiasm.
