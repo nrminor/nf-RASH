@@ -37,6 +37,7 @@ process QUICK_SPLIT_FASTQ {
     --extension ".gz" \
     --out-dir split/ \
     --threads ${task.cpus} \
+    --force \
     ${big_ol_fastq}
     """
 
