@@ -6,8 +6,8 @@ include { HYBRID_REGIONAL } from "../subworkflows/hybrid_regional"
 workflow REGIONAL_BAITING {
 
     take:
-        ch_pb_reads,
-        ch_ref,
+        ch_pb_reads
+        ch_ref
         ch_desired_regions
 
     main:

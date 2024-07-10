@@ -24,8 +24,6 @@ process RUN_HIFIASM {
     tuple path("*"), val(basename), val(region)
 
 	script:
-    assert pb_fastq.toString().toLowerCase().contains("pacbio")
-    assert ont_fastq.toString().toLowerCase().contains("ont")
 	"""
     hifiasm -o ${basename}_${region} -t ${task.cpus} --ul ${ont_fastq} ${pb_fastq}
 	"""
@@ -58,7 +56,6 @@ process RUN_HIFIASM_HIFI_ONLY {
     tuple path("*"), val(basename), val(region)
 
 	script:
-    assert pb_fastq.toString().toLowerCase().contains("pacbio")
 	"""
     hifiasm -o ${basename}_${region} -t ${task.cpus} ${pb_fastq}
 	"""

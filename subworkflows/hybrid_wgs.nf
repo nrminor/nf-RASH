@@ -17,15 +17,10 @@ workflow HYBRID_WGS {
     main:
         RUN_HIFIASM (
             ch_pb_reads
-                .join ( ch_ont_reads, by: 2 )
+                .join ( ch_ont_reads, by: 1 )
                 .map { 
                     basename, pb_fastq, pacbio, ont_fastq, ont -> 
                         tuple( file(pb_fastq), file(ont_fastq), basename, "whole_genome" )
-                }
-                .filter {
-                    pb_fastq, ont_fastq, basename, region ->
-                        file(pb_fastq).countFastq() > params.min_reads &&
-                        file(ont_fastq).countFastq() > params.min_reads
                 }
         )
 

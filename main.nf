@@ -61,7 +61,7 @@ log.info    """
             running them through high-accuracy hybrid assembly using Hifiasm.
             RASH also supports HiFi-only assembly through the hifi_only workflow,
             which will be invoked when a Nanopore FASTQ isn't provided by the user.
-            (version 0.1.2)
+            (version 0.2.3)
             ===================================
 
             Inputs and Outputs:
