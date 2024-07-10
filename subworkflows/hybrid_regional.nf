@@ -8,7 +8,7 @@ include { MERGE_ONT_FASTQS } from '../modules/merge_fastqs'
 include { RUN_HIFIASM } from '../modules/hifiasm'
 include { CONVERT_CONTIGS_TO_FASTA } from '../modules/convert_to_fasta'
 
-workflow HYBRID {
+workflow HYBRID_REGIONAL {
 
     take:
         ch_pb_reads

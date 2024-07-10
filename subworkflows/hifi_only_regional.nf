@@ -7,7 +7,7 @@ include { MERGE_PACBIO_FASTQS } from '../modules/merge_fastqs'
 include { RUN_HIFIASM_HIFI_ONLY } from '../modules/hifiasm'
 include { CONVERT_CONTIGS_TO_FASTA } from '../modules/convert_to_fasta'
 
-workflow HIFI_ONLY {
+workflow HIFI_ONLY_REGIONAL {
     
     take:
         ch_pb_reads

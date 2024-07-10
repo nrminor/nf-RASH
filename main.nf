@@ -2,8 +2,55 @@
 
 nextflow.enable.dsl = 2
 
-include { HYBRID } from './workflows/hybrid'
-include { HIFI_ONLY } from './workflows/hifi_only'
+/*
+
+Welcome to RASH!
+
+Like many Nextflow pipelines, nf-RASH is a metaphorical Russian nesting doll of
+workflows that functions like a binary tree of switchboards. The core switchboard that
+is handled by main.nf is:
+    > Did the user request regional assembly by providing a TSV file of genome
+    > coordinates in a reference sequence?
+
+If the user does (e.g., the TSV's provided in the resources/ directory), the pipeline
+switches into its regional assembly mode. If the user doesn't provide the region TSV,
+the pipeline switches into whole-genome assembly mode.
+
+Each of those two modes themselves have a second switchboard:
+    > Did the user provide a path to Oxford Nanopore ultra-long reads?
+
+If they did, regional assembly mode and whole genome mode will switch into hybrid
+assembly modes. If not, the two workflow modes will work only with the provided Hifi
+reads.
+
+In sum, nf-RASH allows users to do regional assembly or whole genome assembly and do so
+with Hifi reads or Hifi and Nanopore reads. Perhaps a diagram will help:
+
+                                PacBio Hifi reads
+                                      |
+                                      |
+                                      | Desired regions?
+                                      |
+                         Yes:         |          No:
+                       Regional       |      Whole-genome
+                       Assembly       |       Assembly
+                        ————————————————————————————
+                        |                          |
+             ONT reads? |                          | ONT reads?
+                        |                          |
+               No:      |     Yes:        No:      |     Yes:
+                ————————————————           ————————————————
+                |              |           |              |
+                |              |           |              |
+               Hifi          HiFi        HiFi            HiFi
+               only         and ONT      only           and ONT
+                           (hybrid)                    (hybrid)
+
+
+*/
+
+include { WHOLE_GENOME } from './workflows/whole_genome'
+include { REGIONAL_BAITING } from './workflows/regional_baiting'
 
 // log out some of the information provided by the user
 log.info    """
@@ -20,9 +67,9 @@ log.info    """
             Inputs and Outputs:
             ----------------------------------
             PacBio FASTQ           : ${params.pb_fastq}
-            ONT FASTQ (optional)   : ${params.ont_fastq_log}
-            Reference FASTA        : ${params.ref_fasta}
-            Regions TSV            : ${params.desired_regions}
+            ONT FASTQ (optional)   : ${params.ont_fastq ?: ""}
+            Reference FASTA        : ${params.ref_fasta ?: ""}
+            Regions TSV            : ${params.desired_regions ?: ""}
             results_dir            : ${params.results}
 
             Run settings:
@@ -37,56 +84,48 @@ log.info    """
 // define the main workflow
 workflow {
 
-    // make sure the user provided inputs exist
+    // make sure the minimum user provided input, PacBio HiFi reads, exists
     assert params.pb_fastq : "Please provide a PacBio HiFi CCS FASTQ.gz file with the --pb_fastq argument."
     assert file(params.pb_fastq).exists() : "Provided path to PacBio FASTQ does not exist."
-	assert params.ref_fasta : "Please provide a reference FASTA with the --ref_fasta argument."
-    assert file(params.ref_fasta).exists() : "Provided path to reference FASTA does not exist."
 
 	// input channels shared by both workflows
     ch_pb_reads = Channel
         .fromPath ( params.pb_fastq )
         .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" )}
+
+    // if desired regions are provided, assemble just those regions
+    if ( params.desired_regions ) {
+
+        // raise an error if the provided TSV path doesn't exist or if the reference doesn't exist
+        assert file(params.desired_regions).exists() : "Provided path to desired region TSV does not exist."
+        assert params.ref_fasta : "Please provide a reference FASTA with the --ref_fasta argument."
+        assert file(params.ref_fasta).exists() : "Provided path to reference FASTA does not exist."
     
-    ch_ref = Channel
-        .fromPath ( params.ref_fasta )
-    
-    ch_desired_regions = Channel
-        .fromPath ( params.desired_regions )
-        .splitCsv ( header: true, sep: "\t", strip: true )
-        .map { 
-            row -> tuple( 
-                "${row.chromosome}:${row.start}-${row.stop}", row.region, row.merge_key
-            ) 
-        }
+        // launch input channels for the reference FASTA and the desired region coordinates
+        ch_ref = Channel
+            .fromPath ( params.ref_fasta )
 
-    // if an ont fastq is provided, run hybrid assembly
-    if ( params.ont_fastq ) {
+        ch_desired_regions = Channel
+            .fromPath ( params.desired_regions )
+            .splitCsv ( header: true, sep: "\t", strip: true )
+            .map { 
+                row -> tuple( 
+                    "${row.chromosome}:${row.start}-${row.stop}", row.region, row.merge_key
+                ) 
+            }
 
-        // raise an error if the provided ont FASTQ path doesn't exist
-        assert file(params.ont_fastq).exists() : "Provided path to Nanopore FASTQ does not exist."
-
-        // create the ont channel tuple
-        ch_ont_reads = Channel
-            .fromPath ( params.ont_fastq )
-            .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" )}
-
-        // run hybrid assembly
-        HYBRID (
+        // run regional baiting
+        REGIONAL_BAITING (
             ch_pb_reads,
-            ch_ont_reads,
             ch_ref,
             ch_desired_regions
         )
     
-    // otherwise, just use the provided PacBio HiFi reads
+    // otherwise, run whole-genome assembly
     } else {
 
-        // run hifi-only assembly
-        HIFI_ONLY (
-            ch_pb_reads,
-            ch_ref,
-            ch_desired_regions
+        WHOLE_GENOME (
+            ch_pb_reads
         )
 
     }
