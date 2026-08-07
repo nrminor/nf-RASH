@@ -10,26 +10,29 @@ include { CONVERT_CONTIGS_TO_FASTA } from '../modules/convert_to_fasta'
 workflow HIFI_ONLY_REGIONAL {
     
     take:
-        ch_pb_reads
+        ch_hifi_only_samples
         ch_ref
         ch_desired_regions
 
     main:
         QUICK_SPLIT_FASTQ (
-            ch_pb_reads
+            ch_hifi_only_samples
+                .map { sample_id, pb_fastq, _ont_fastq ->
+                    tuple( file(pb_fastq), sample_id, "pacbio" )
+                }
         )
 
         MAP_TO_REF (
             QUICK_SPLIT_FASTQ.out
-                .map { fastqs, platform -> fastqs }
-                .flatten ( )
-                .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" ) },
+                .flatMap { fastqs, sample_id, platform ->
+                    fastqs.collect { fastq -> tuple( file(fastq), sample_id, platform ) }
+                },
                 ch_ref
         )
 
         EXTRACT_REGIONS (
-            MAP_TO_REF.out,
-            ch_desired_regions
+            MAP_TO_REF.out
+                .combine ( ch_desired_regions )
         )
 
         MERGE_PACBIO_FASTQS (
@@ -40,11 +43,11 @@ workflow HIFI_ONLY_REGIONAL {
         RUN_HIFIASM_HIFI_ONLY (
             MERGE_PACBIO_FASTQS.out
                 .map { 
-                    pb_fastq, basename, platform, region -> 
-                        tuple( file(pb_fastq), basename, region )
+                    pb_fastq, sample_id, _platform, region -> 
+                        tuple( file(pb_fastq), sample_id, region )
                 }
                 .filter {
-                    pb_fastq, basename, region ->
+                    pb_fastq, _sample_id, _region ->
                         file(pb_fastq).countFastq() > params.min_reads
                 }
         )

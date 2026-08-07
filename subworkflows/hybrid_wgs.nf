@@ -1,26 +1,19 @@
 #!/usr/bin/env nextflow
 
-include { QUICK_SPLIT_FASTQ } from '../modules/quick_split_fastqs'
-include { MAP_TO_REF } from '../modules/map_to_ref'
-include { EXTRACT_REGIONS } from '../modules/extract_regions'
-include { MERGE_PACBIO_FASTQS } from '../modules/merge_fastqs'
-include { MERGE_ONT_FASTQS } from '../modules/merge_fastqs'
 include { RUN_HIFIASM } from '../modules/hifiasm'
 include { CONVERT_CONTIGS_TO_FASTA } from '../modules/convert_to_fasta'
 
 workflow HYBRID_WGS {
 
     take:
-        ch_pb_reads
-        ch_ont_reads
+        ch_hybrid_samples
 
     main:
         RUN_HIFIASM (
-            ch_pb_reads
-                .join ( ch_ont_reads, by: 1 )
+            ch_hybrid_samples
                 .map { 
-                    basename, pb_fastq, pacbio, ont_fastq, ont -> 
-                        tuple( file(pb_fastq), file(ont_fastq), basename, "whole_genome" )
+                    sample_id, pb_fastq, ont_fastq -> 
+                        tuple( file(pb_fastq), file(ont_fastq), sample_id, "whole_genome" )
                 }
         )
 

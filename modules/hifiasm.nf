@@ -7,10 +7,10 @@ process RUN_HIFIASM {
     making sure that only FASTQs with matching regions are assembled together.
     */
 
-	tag "${basename}, ${region}"
+	tag "${sample_id}, ${region}"
     label "hifiasm"
 
-	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
+	publishDir { "${params.assembly}/${sample_id}_${region}" }, mode: 'copy', overwrite: true
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
@@ -18,14 +18,14 @@ process RUN_HIFIASM {
     cpus params.cpus
 
 	input:
-    tuple path(pb_fastq), path(ont_fastq), val(basename), val(region)
+    tuple path(pb_fastq), path(ont_fastq), val(sample_id), val(region)
 
 	output:
-    tuple path("*"), val(basename), val(region)
+    tuple path("*"), val(sample_id), val(region)
 
 	script:
 	"""
-    hifiasm -o ${basename}_${region} -t ${task.cpus} --ul ${ont_fastq} ${pb_fastq}
+    hifiasm -o ${sample_id}_${region} -t ${task.cpus} --ul ${ont_fastq} ${pb_fastq}
 	"""
 
 }
@@ -39,10 +39,10 @@ process RUN_HIFIASM_HIFI_ONLY {
     making sure that only FASTQs with matching regions are assembled together.
     */
 
-	tag "${basename}, ${region}"
+	tag "${sample_id}, ${region}"
     label "hifiasm"
 
-	publishDir "${params.assembly}/${basename}_${region}", mode: 'copy', overwrite: true
+	publishDir { "${params.assembly}/${sample_id}_${region}" }, mode: 'copy', overwrite: true
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
@@ -50,14 +50,14 @@ process RUN_HIFIASM_HIFI_ONLY {
     cpus params.cpus
 
 	input:
-    tuple path(pb_fastq), val(basename), val(region)
+    tuple path(pb_fastq), val(sample_id), val(region)
 
 	output:
-    tuple path("*"), val(basename), val(region)
+    tuple path("*"), val(sample_id), val(region)
 
 	script:
 	"""
-    hifiasm -o ${basename}_${region} -t ${task.cpus} ${pb_fastq}
+    hifiasm -o ${sample_id}_${region} -t ${task.cpus} ${pb_fastq}
 	"""
 
 }

@@ -9,7 +9,7 @@ process EXTRACT_REGIONS {
     those N regions.
     */
 
-	tag "${basename}, ${platform}, ${region}"
+	tag "${sample_id}, ${platform}, ${region}"
     label "map_and_extract"
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
@@ -18,23 +18,19 @@ process EXTRACT_REGIONS {
     cpus params.cpus
 
 	input:
-    each path(bam)
-    tuple val(expression), val(region), val(merge_key)
+    tuple path(bam), val(sample_id), val(platform), val(expression), val(region), val(merge_key)
 
 	output:
-    tuple path("${basename}_${platform}_${merge_key}.fastq.gz"), val(basename), val(platform), val(merge_key)
+    tuple path("*_${merge_key}.fastq.gz"), val(sample_id), val(platform), val(merge_key)
 
 	script:
-    bam_components = bam.toString().replace(".bam", "").split("_")
-    assert bam_components.size() == 2 : "Necessary information could not be parsed from $bam.toString()."
-    basename = bam_components[0]
-    platform = bam_components[1]
+	bam_id = bam.getSimpleName()
 	"""
     samtools index ${bam}
     samtools view -b ${bam} ${expression} \
     | samtools fastq - \
     | reformat.sh qin=33 int=f in=stdin.fq \
-    out=${basename}_${platform}_${merge_key}.fastq.gz
+    out=${bam_id}_${merge_key}.fastq.gz
 	"""
 
 }

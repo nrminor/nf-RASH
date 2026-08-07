@@ -17,7 +17,7 @@ process QUICK_SPLIT_FASTQ {
     tag "${platform}, ${params.split_max} reads per file"
     label "seqkit"
 
-    storeDir "$launchDir/${sample_id}_split_fastqs"
+    storeDir { "$launchDir/${sample_id}_${platform}_split_fastqs" }
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
@@ -28,7 +28,7 @@ process QUICK_SPLIT_FASTQ {
     tuple path(big_ol_fastq), val(sample_id), val(platform)
 
     output:
-    tuple path("split/*.fastq.gz"), val(platform)
+    tuple path("split/*.fastq.gz"), val(sample_id), val(platform)
 
     script:
     """

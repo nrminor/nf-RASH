@@ -19,20 +19,29 @@ To get started, all you need installed is [Nextflow](https://nextflow.io/) and e
 nextflow run . \
 -profile singularity \
 -c config/hpc.config \
---pb_fastq inputs/pbhifi.fastq.gz \
---ont_fastq inputs/ont.fastq.gz \
+--samplesheet samples.csv \
 --ref_fasta inputs/ref.fasta.gz \
 --desired_regions resources/desired_regions.tsv \
 --split_max 500000 \
 --cpus 20
 ```
 
+The samplesheet is a comma-separated file with one row per sample:
+
+```csv
+sample_id,pb_fastq,ont_fastq
+sample_01,inputs/sample_01.hifi.fastq.gz,inputs/sample_01.ont.fastq.gz
+sample_02,inputs/sample_02.hifi.fastq.gz,
+```
+
+`sample_id` values must be unique and may contain letters, numbers, periods, underscores, and hyphens. `pb_fastq` is required. `ont_fastq` is optional; leave it blank to run HiFi-only assembly for that sample. Relative FASTQ paths are resolved from the directory where Nextflow is launched.
+
 This command demonstrates a few ways you can configure the pipeline, namely:
 
 - (`nextflow run .` runs the pipeline in the current working directory)
 - `-profile singularity` tells RASH to user the Singularity container engine. This can also be set to `apptainer` or `docker`
 - `-c config/hpc.config` tells it to pull additional configuration from our example HPC config. We use additional config files to specify platform-specific configurations, e.g., to interface with the Slurm workload manager.
-- `--pb_fastq` and `--ont_fastq` specify paths to input files. RASH will check that these files actually exist. Note also that the folder `inputs/` is included in the repo `.gitignore` file.
+- `--samplesheet` specifies the sample IDs and FASTQ paths. RASH checks that the supplied FASTQ files exist and processes samples concurrently as resources allow. Note also that the folder `inputs/` is included in the repo `.gitignore` file.
 - `--ref_fasta` (you guessed it) specifies the path to the reference FASTA file.
 - `--desired_regions` expects a TSV file that specifies the genome coordinates for where you'd like to assemble. See our example at [`resources/desired_regions.tsv`](resources/desired_regions.tsv). Ultimately, this gets parsed into a `samtools view` expression.
 - `--split_max` specifies the maximum number of reads to include in each split FASTQ. This comes up in the first step in the pipeline, which is to split up the enormous input FASTQs into a bunch of smaller chunks, each of which can be mapped to the reference in parallel.

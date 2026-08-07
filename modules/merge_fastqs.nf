@@ -7,7 +7,7 @@ process MERGE_PACBIO_FASTQS {
     run these merges performantly on PacBio reads.
     */
 
-    tag "${basename}, ${platform}, ${region}"
+    tag "${sample_id}, ${platform}, ${region}"
     label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
@@ -17,10 +17,10 @@ process MERGE_PACBIO_FASTQS {
     cpus params.cpus
 
 	input:
-    tuple path("to_merge/???.fastq.gz"), val(basename), val(platform), val(region)
+    tuple path("to_merge/???.fastq.gz"), val(sample_id), val(platform), val(region)
 
 	output:
-    tuple path("${basename}_${platform}_${region}.fastq.gz"), val(basename), val(platform), val(region)
+    tuple path("${sample_id}_${platform}_${region}.fastq.gz"), val(sample_id), val(platform), val(region)
 
 	script:
 	"""
@@ -28,7 +28,7 @@ process MERGE_PACBIO_FASTQS {
     --threads ${task.cpus} \
     --find-only \
     --out-format fastq ./to_merge/ \
-    | gzip -c > ${basename}_${platform}_${region}.fastq.gz
+    | gzip -c > ${sample_id}_${platform}_${region}.fastq.gz
 	"""
 
 }
@@ -42,7 +42,7 @@ process MERGE_ONT_FASTQS {
     run these merges performantly on Oxford Nanopore reads.
     */
 
-    tag "${basename}, ${platform}, ${region}"
+    tag "${sample_id}, ${platform}, ${region}"
     label "seqkit"
 	publishDir params.extracted, mode: 'copy', overwrite: true
 
@@ -52,10 +52,10 @@ process MERGE_ONT_FASTQS {
     cpus params.cpus
 
 	input:
-    tuple path("to_merge/???.fastq.gz"), val(basename), val(platform), val(region)
+    tuple path("to_merge/???.fastq.gz"), val(sample_id), val(platform), val(region)
 
 	output:
-    tuple path("${basename}_${platform}_${region}.fastq.gz"), val(basename), val(platform), val(region)
+    tuple path("${sample_id}_${platform}_${region}.fastq.gz"), val(sample_id), val(platform), val(region)
 
 	script:
 	"""
@@ -63,7 +63,7 @@ process MERGE_ONT_FASTQS {
     --threads ${task.cpus} \
     --find-only \
     --out-format fastq ./to_merge/ \
-    | gzip -c > ${basename}_${platform}_${region}.fastq.gz
+    | gzip -c > ${sample_id}_${platform}_${region}.fastq.gz
 	"""
 
 }

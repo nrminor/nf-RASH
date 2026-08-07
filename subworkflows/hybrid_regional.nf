@@ -11,38 +11,32 @@ include { CONVERT_CONTIGS_TO_FASTA } from '../modules/convert_to_fasta'
 workflow HYBRID_REGIONAL {
 
     take:
-        ch_pb_reads
-        ch_ont_reads
+        ch_hybrid_samples
         ch_ref
         ch_desired_regions
 
     main:
         QUICK_SPLIT_FASTQ (
-            ch_pb_reads
-                .mix ( ch_ont_reads )
+            ch_hybrid_samples
+                .flatMap { sample_id, pb_fastq, ont_fastq ->
+                    [
+                        tuple( file(pb_fastq), sample_id, "pacbio" ),
+                        tuple( file(ont_fastq), sample_id, "ont" )
+                    ]
+                }
         )
 
         MAP_TO_REF (
             QUICK_SPLIT_FASTQ.out
-                .filter { fastq, platform -> platform == "pacbio" }
-                .map { fastqs, platform -> fastqs }
-                .flatten ( )
-                .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" ) }
-                .mix (
-
-                    QUICK_SPLIT_FASTQ.out
-                        .filter { fastq, platform -> platform == "ont" }
-                        .map { fastqs, platform -> fastqs }
-                        .flatten ( )
-                        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "ont" ) }
-
-                ),
+                .flatMap { fastqs, sample_id, platform ->
+                    fastqs.collect { fastq -> tuple( file(fastq), sample_id, platform ) }
+                },
                 ch_ref
         )
 
         EXTRACT_REGIONS (
-            MAP_TO_REF.out,
-            ch_desired_regions
+            MAP_TO_REF.out
+                .combine ( ch_desired_regions )
         )
 
         MERGE_PACBIO_FASTQS (
@@ -61,11 +55,11 @@ workflow HYBRID_REGIONAL {
             MERGE_PACBIO_FASTQS.out
                 .join ( MERGE_ONT_FASTQS.out, by: [ 1, 3 ] )
                 .map { 
-                    basename, region, pb_fastq, pacbio, ont_fastq, ont -> 
-                        tuple( file(pb_fastq), file(ont_fastq), basename, region )
+                    sample_id, region, pb_fastq, _pacbio, ont_fastq, _ont -> 
+                        tuple( file(pb_fastq), file(ont_fastq), sample_id, region )
                 }
                 .filter {
-                    pb_fastq, ont_fastq, basename, region ->
+                    pb_fastq, ont_fastq, _sample_id, _region ->
                         file(pb_fastq).countFastq() > params.min_reads &&
                         file(ont_fastq).countFastq() > params.min_reads
                 }

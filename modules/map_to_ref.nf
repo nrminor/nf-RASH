@@ -6,7 +6,7 @@ process MAP_TO_REF {
     contain regions of interest.
     */
 
-	tag "${basename}, ${platform}"
+	tag "${sample_id}, ${platform}"
     label "map_and_extract"
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
@@ -15,20 +15,21 @@ process MAP_TO_REF {
     cpus params.cpus
 
 	input:
-    tuple path(fastq), val(basename), val(platform)
+    tuple path(fastq), val(sample_id), val(platform)
     each path(ref_fasta)
 
 	output:
-    path "*.bam"
+    tuple path("*.bam"), val(sample_id), val(platform)
 
 	script:
     minimap2_preset = platform == "pacbio" ? "map-hifi" : "map-ont"
+	chunk_id = fastq.getSimpleName()
 	"""
     minimap2 -t ${task.cpus} -L --eqx -ax ${minimap2_preset} \
     `realpath ${ref_fasta}` \
     `realpath ${fastq}` \
     | samtools view -Sbt `realpath ${ref_fasta}` \
-    | samtools sort - -o ${basename}_${platform}.bam
+    | samtools sort - -o ${sample_id}_${chunk_id}_${platform}.bam
 	"""
 
 }

@@ -52,46 +52,73 @@ with Hifi reads or Hifi and Nanopore reads. Perhaps a diagram will help:
 include { WHOLE_GENOME } from './workflows/whole_genome'
 include { REGIONAL_BAITING } from './workflows/regional_baiting'
 
-// log out some of the information provided by the user
-log.info    """
-            RASH: Regional ASsembly Helper
-            ===================================
-            RASH is a containerized Nextflow pipeline for extracting genome regions
-            of interest from PacBio HiFi and Oxford Nanopore sequencing reads and 
-            running them through high-accuracy hybrid assembly using Hifiasm.
-            RASH also supports HiFi-only assembly through the hifi_only workflow,
-            which will be invoked when a Nanopore FASTQ isn't provided by the user.
-            (version 0.2.3)
-            ===================================
-
-            Inputs and Outputs:
-            ----------------------------------
-            PacBio FASTQ           : ${params.pb_fastq}
-            ONT FASTQ (optional)   : ${params.ont_fastq ?: ""}
-            Reference FASTA        : ${params.ref_fasta ?: ""}
-            Regions TSV            : ${params.desired_regions ?: ""}
-            results_dir            : ${params.results}
-
-            Run settings:
-            -----------------------------------
-            Reads per split FASTQ : ${params.split_max}
-            Min reads per region  : ${params.min_reads}
-            cleanup               : ${params.cleanup}
-            cpus per task         : ${params.cpus}
-            """
-            .stripIndent()
-
 // define the main workflow
 workflow {
 
-    // make sure the minimum user provided input, PacBio HiFi reads, exists
-    assert params.pb_fastq : "Please provide a PacBio HiFi CCS FASTQ.gz file with the --pb_fastq argument."
-    assert file(params.pb_fastq).exists() : "Provided path to PacBio FASTQ does not exist."
+    // log out some of the information provided by the user
+    log.info    """
+                RASH: Regional ASsembly Helper
+                ===================================
+                RASH is a containerized Nextflow pipeline for extracting genome regions
+                of interest from PacBio HiFi and Oxford Nanopore sequencing reads and
+                running them through high-accuracy hybrid assembly using Hifiasm.
+                RASH also supports HiFi-only assembly through the hifi_only workflow,
+                which will be invoked when a Nanopore FASTQ isn't provided by the user.
+                (version 0.2.3)
+                ===================================
 
-	// input channels shared by both workflows
-    ch_pb_reads = Channel
-        .fromPath ( params.pb_fastq )
-        .map { fastq -> tuple( file(fastq), file(fastq).getSimpleName(), "pacbio" )}
+                Inputs and Outputs:
+                ----------------------------------
+                Samplesheet            : ${params.samplesheet}
+                Reference FASTA        : ${params.ref_fasta ?: ""}
+                Regions TSV            : ${params.desired_regions ?: ""}
+                results_dir            : ${params.results}
+
+                Run settings:
+                -----------------------------------
+                Reads per split FASTQ : ${params.split_max}
+                Min reads per region  : ${params.min_reads}
+                cleanup               : ${params.cleanup}
+                cpus per task         : ${params.cpus}
+                """
+                .stripIndent()
+
+    // parse one row per sample and route it according to whether ONT reads were provided
+    assert params.samplesheet : "Please provide a CSV samplesheet with the --samplesheet argument."
+    assert file(params.samplesheet).exists() : "Provided path to samplesheet does not exist."
+
+    ch_samples_by_type = channel
+        .fromPath ( params.samplesheet )
+        .splitCsv ( header: true, sep: ",", strip: true )
+        .map { row ->
+            assert row.containsKey("sample_id") : "Samplesheet is missing the sample_id column."
+            assert row.containsKey("pb_fastq") : "Samplesheet is missing the pb_fastq column."
+            assert row.containsKey("ont_fastq") : "Samplesheet is missing the ont_fastq column."
+
+            def sample_id = row.sample_id?.trim()
+            assert sample_id : "Every samplesheet row must include a sample_id."
+            assert sample_id ==~ /[A-Za-z0-9][A-Za-z0-9._-]*/ : "Invalid sample_id '${sample_id}'. Use only letters, numbers, periods, underscores, and hyphens."
+
+            assert row.pb_fastq : "Sample '${sample_id}' is missing a PacBio FASTQ path."
+            def pb_fastq = file(row.pb_fastq)
+            assert pb_fastq.exists() : "PacBio FASTQ for sample '${sample_id}' does not exist: ${row.pb_fastq}"
+
+            def ont_fastq = row.ont_fastq ? file(row.ont_fastq) : null
+            assert !ont_fastq || ont_fastq.exists() : "ONT FASTQ for sample '${sample_id}' does not exist: ${row.ont_fastq}"
+
+            tuple( sample_id, pb_fastq, ont_fastq )
+        }
+        .ifEmpty { error "Samplesheet must contain at least one sample." }
+        .collect ( flat: false )
+        .flatMap { samples ->
+            def sample_ids = samples.collect { sample -> sample[0] }
+            assert sample_ids.size() == sample_ids.toSet().size() : "Samplesheet sample_id values must be unique."
+            samples
+        }
+        .branch { sample ->
+            hybrid: sample[2] != null
+            hifi_only: true
+        }
 
     // if desired regions are provided, assemble just those regions
     if ( params.desired_regions ) {
@@ -102,10 +129,10 @@ workflow {
         assert file(params.ref_fasta).exists() : "Provided path to reference FASTA does not exist."
     
         // launch input channels for the reference FASTA and the desired region coordinates
-        ch_ref = Channel
+        ch_ref = channel
             .fromPath ( params.ref_fasta )
 
-        ch_desired_regions = Channel
+        ch_desired_regions = channel
             .fromPath ( params.desired_regions )
             .splitCsv ( header: true, sep: "\t", strip: true )
             .map { 
@@ -116,7 +143,8 @@ workflow {
 
         // run regional baiting
         REGIONAL_BAITING (
-            ch_pb_reads,
+            ch_samples_by_type.hybrid,
+            ch_samples_by_type.hifi_only,
             ch_ref,
             ch_desired_regions
         )
@@ -125,10 +153,10 @@ workflow {
     } else {
 
         WHOLE_GENOME (
-            ch_pb_reads
+            ch_samples_by_type.hybrid,
+            ch_samples_by_type.hifi_only
         )
 
     }
 
 }
-
