@@ -13,12 +13,11 @@ These tasks are made considerably more difficult by the fact that the FASTQ file
 
 ### Usage
 
-To get started, all you need installed is [Nextflow](https://nextflow.io/) and either Docker or Apptainer. To run it on your own data, you use a command like this:
+The complete runtime environment is pinned in `pixi.toml` and `pixi.lock`. Install [Pixi](https://pixi.sh/), then run the pipeline without process containers:
 
 ```zsh
-nextflow run . \
--profile singularity \
--c config/hpc.config \
+pixi run nextflow run . \
+-profile local \
 --samplesheet samples.csv \
 --ref_fasta inputs/ref.fasta.gz \
 --desired_regions resources/desired_regions.tsv \
@@ -38,9 +37,8 @@ sample_02,inputs/sample_02.hifi.fastq.gz,
 
 This command demonstrates a few ways you can configure the pipeline, namely:
 
-- (`nextflow run .` runs the pipeline in the current working directory)
-- `-profile singularity` tells RASH to user the Singularity container engine. This can also be set to `apptainer` or `docker`
-- `-c config/hpc.config` tells it to pull additional configuration from our example HPC config. We use additional config files to specify platform-specific configurations, e.g., to interface with the Slurm workload manager.
+- `pixi run` runs Nextflow with the locked pipeline dependencies on `$PATH`.
+- `-profile local` disables process containers; `containerless` is an equivalent, more explicit name. The `standard` and `docker` profiles instead use the unified `nrminor/nf-rash:latest` monoimage for every process; `singularity` and `apptainer` pull the same image from Docker Hub.
 - `--samplesheet` specifies the sample IDs and FASTQ paths. RASH checks that the supplied FASTQ files exist and processes samples concurrently as resources allow. Note also that the folder `inputs/` is included in the repo `.gitignore` file.
 - `--ref_fasta` (you guessed it) specifies the path to the reference FASTA file.
 - `--desired_regions` expects a TSV file that specifies the genome coordinates for where you'd like to assemble. See our example at [`resources/desired_regions.tsv`](resources/desired_regions.tsv). Ultimately, this gets parsed into a `samtools view` expression.

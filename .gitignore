@@ -191,3 +191,9 @@ samples/
 sandbox/
 scratch/
 scratch*
+
+.dockerup
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml

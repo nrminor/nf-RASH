@@ -1,0 +1,15 @@
+.git
+.jj
+.pixi
+.nextflow
+.nextflow.log*
+work
+results
+input
+inputs
+data
+fastq
+fastqs
+reads
+samples
+scratch*
