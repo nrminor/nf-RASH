@@ -13,8 +13,6 @@ process CONVERT_CONTIGS_TO_FASTA {
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
 
-    cpus 3
-
 	input:
     tuple path("hifiasm_files/*"), val(sample_id), val(region)
 

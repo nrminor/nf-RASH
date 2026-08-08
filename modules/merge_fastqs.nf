@@ -14,8 +14,6 @@ process MERGE_PACBIO_FASTQS {
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
 
-    cpus params.cpus
-
 	input:
     tuple path("to_merge/???.fastq.gz"), val(sample_id), val(platform), val(region)
 
@@ -48,8 +46,6 @@ process MERGE_ONT_FASTQS {
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
-
-    cpus params.cpus
 
 	input:
     tuple path("to_merge/???.fastq.gz"), val(sample_id), val(platform), val(region)

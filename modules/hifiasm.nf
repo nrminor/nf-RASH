@@ -15,8 +15,6 @@ process RUN_HIFIASM {
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
 
-    cpus params.cpus
-
 	input:
     tuple path(pb_fastq), path(ont_fastq), val(sample_id), val(region)
 
@@ -46,8 +44,6 @@ process RUN_HIFIASM_HIFI_ONLY {
 
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
-
-    cpus params.cpus
 
 	input:
     tuple path(pb_fastq), val(sample_id), val(region)

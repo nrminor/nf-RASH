@@ -22,8 +22,6 @@ process QUICK_SPLIT_FASTQ {
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
 
-    cpus params.cpus
-
     input:
     tuple path(big_ol_fastq), val(sample_id), val(platform)
 

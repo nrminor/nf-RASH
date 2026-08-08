@@ -15,8 +15,6 @@ process EXTRACT_REGIONS {
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
 
-    cpus params.cpus
-
 	input:
     tuple path(bam), val(sample_id), val(platform), val(expression), val(region), val(merge_key)
 

@@ -79,7 +79,6 @@ workflow {
                 Reads per split FASTQ : ${params.split_max}
                 Min reads per region  : ${params.min_reads}
                 cleanup               : ${params.cleanup}
-                cpus per task         : ${params.cpus}
                 """
                 .stripIndent()
 

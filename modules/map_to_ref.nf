@@ -12,8 +12,6 @@ process MAP_TO_REF {
 	errorStrategy { task.attempt < 3 ? 'retry' : 'ignore' }
 	maxRetries 2
 
-    cpus params.cpus
-
 	input:
     tuple path(fastq), val(sample_id), val(platform)
     each path(ref_fasta)
